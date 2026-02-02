@@ -7,3 +7,7 @@
 !olympus/
 !olympus/**
 !makefile
+!buildFeatures.cpp
+!matchImage.cpp
+!featureMethods.h
+!featureMethods.cpp
