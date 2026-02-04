@@ -8,35 +8,10 @@
 */	
 
 #include <iostream>
-#include <vector>
 #include <string>
 #include "csv_util.h"
 #include "featureMethods.h"
-
-/*
-    Computes euclidean distance between two features
-
-    Parameters:
-        a: feature vector 1
-        b: feature vector 2
-
-    Returns:
-        euclidean distance between two features
-*/
-float euclideanDistance(const std::vector<float> &a, const std::vector<float> &b) {
-    if (a.size() != b.size()) {
-        printf("Vector sizes do not match!");
-        return -1;
-    }
-
-    float sum = 0.0f;
-    for (size_t i = 0; i < a.size(); i++) {
-        float diff = a[i] - b[i];
-        sum += diff * diff;
-    }
-
-    return std::sqrt(sum);
-}
+#include "distanceFunctions.h"
 
 // Computes top N matches from image DB to target image using euclidean distance
 int main(int argc, char* argv[]) {
@@ -55,8 +30,21 @@ int main(int argc, char* argv[]) {
 
     // Compute target features
     std::vector<float> targetFeatures;
+    int status = -1;
     if (featureMethod == "baseline") {
-        baseline7x7(targetImage, targetFeatures);
+        status = baseline7x7(targetImage, targetFeatures);
+    }
+    else if (featureMethod == "chistogram") {
+        status = colorHistogram(targetImage, targetFeatures, 16);
+    }
+    else {
+        printf("Distance function not valid!\n");
+        return -1;
+    }
+
+    if (status != 0) {
+        printf("Error, feature extraction failed for target image!\n");
+        return -1;
     }
 
     // Read feature CSV
@@ -69,8 +57,20 @@ int main(int argc, char* argv[]) {
     std::vector<std::pair<float, std::string>> results;
 
     for (size_t i = 0; i < data.size(); i++) {
-        float dist = euclideanDistance(targetFeatures, data[i]);
-        results.emplace_back(dist, filenames[i]);
+        float dist = -1.0f;
+
+        // Compute distance using appropriate distance metric
+        if (featureMethod == "baseline") {
+            dist = euclideanDistance(targetFeatures, data[i]);
+        }
+        else if (featureMethod == "chistogram") {
+            dist = histogramIntersection(targetFeatures, data[i]);
+        }
+
+        // Store results
+        if (dist >= 0) {
+            results.emplace_back(dist, filenames[i]);
+        }
     }
 
     // Sort by ascending distance
@@ -83,10 +83,7 @@ int main(int argc, char* argv[]) {
     printf("The top %d image matches:\n", N);
 
     for (int i = 0; i < std::min(N, (int)results.size()); i++) {
-        printf("%d: %s  (distance = %.5f)\n",
-            i + 1,
-            results[i].second.c_str(),
-            results[i].first);
+        printf("%d: %s  (distance = %.5f)\n", i + 1,results[i].second.c_str(), results[i].first);
     }
 
     // Cleanup allocated filenames

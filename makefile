@@ -11,10 +11,10 @@ LDFLAGS += -L$(HOME)/onnxruntime/lib -lonnxruntime
 
 # Make methods
 buildFeatures:
-	$(CXX) $(CXXFLAGS) buildFeatures.cpp csv_util.cpp featureMethods.cpp -o buildFeatures $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) buildFeatures.cpp csv_util.cpp featureMethods.cpp distanceFunctions.cpp -o buildFeatures $(LDFLAGS)
 
 matchImage:
-	$(CXX) $(CXXFLAGS) matchImage.cpp csv_util.cpp featureMethods.cpp -o matchImage $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) matchImage.cpp csv_util.cpp featureMethods.cpp distanceFunctions.cpp -o matchImage $(LDFLAGS)
 
 # Clean
 clean:

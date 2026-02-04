@@ -77,10 +77,22 @@ int main(int argc, char* argv[]) {
         }
         
         std::vector<float> features;
-        
+        int status = -1;
         // Run baseline feature method
         if (featureMethod == "baseline") {
-            baseline7x7(image, features);
+            status = baseline7x7(image, features);
+        }
+        else if (featureMethod == "chistogram") {
+            status = colorHistogram(image, features);
+        }
+        else {
+            printf("Error, feature method not valid!\n");
+            return -1;
+        }
+
+        if (status != 0) {
+            printf("Warning: Feature extraction failed for %s\n", imgPath.c_str());
+            continue;
         }
 
         append_image_data_csv(outputCSV, const_cast<char*>(imgPath.c_str()), features, reset);

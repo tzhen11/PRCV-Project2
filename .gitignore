@@ -11,3 +11,5 @@
 !matchImage.cpp
 !featureMethods.h
 !featureMethods.cpp
+!distanceFunctions.h
+!distanceFunctions.cpp
