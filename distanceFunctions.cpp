@@ -3,6 +3,8 @@
 */
 
 #include "distanceFunctions.h"
+#include <cstdio>
+#include <cmath>
 
 /*
     Computes euclidean distance between two features
