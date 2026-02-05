@@ -92,6 +92,9 @@ int main(int argc, char* argv[]) {
         else if (featureMethod == "chistogram") {
             status = colorHistogram(image, features);
         }
+        else if (featureMethod == "mhistogram") {
+            status = multiHistogram(image, features);
+        }
         else if (featureMethod == "texture") {
             status = textureAndColor(image, features,16);
         }

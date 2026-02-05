@@ -36,6 +36,22 @@ int baseline7x7(const cv::Mat &src, std::vector<float> &features);
 int colorHistogram(const cv::Mat &src, std::vector<float> &features, int histSize = 16);
 
 /*
+    Function to compute multi-region 2D RG chromaticity histograms.
+    Computes two histograms: whole image and center region.
+    
+    Parameters:
+        src: input image (BGR format)
+        features: output feature vector (size = 2 * histSize * histSize)
+                  [whole_hist_flattened, center_hist_flattened]
+        histSize: number of bins per dimension (default 16)
+    
+    Returns:
+        0 on success
+        -1 on error
+*/
+int multiHistogram(const cv::Mat &src, std::vector<float> &features, int histSize = 16);
+
+/*
     Function to compute combined texture and color features from an image.
     
     Color: 2D RG chromaticity histogram (same as colorHistogram function)

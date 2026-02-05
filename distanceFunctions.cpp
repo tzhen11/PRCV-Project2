@@ -64,6 +64,47 @@ float histogramIntersection(const std::vector<float> &a, const std::vector<float
 }
 
 /*
+    Computes distance for multi-histogram features.
+    Splits the feature vector into two histograms, compares each,
+    then combines using weighted average.
+    
+    Parameters:
+        a: multi-histogram feature vector 1 (size = 2 * histSize * histSize)
+        b: multi-histogram feature vector 2 (size = 2 * histSize * histSize)
+        wholeWeight: weight for whole image histogram (default 0.5), centerWeight = 1.0 - weightWhole
+    
+    Returns:
+        combined distance
+        -1 on error
+*/
+float multiHistogramDistance(const std::vector<float> &a, const std::vector<float> &b, float wholeWeight) {
+    // Validate histograms
+    if (a.size() != b.size()) {
+        printf("Histogram sizes do not match!\n");
+        return -1;
+    }
+
+    int halfSize = a.size() / 2;
+
+    // Split into whole and center histograms
+    std::vector<float> aWhole(a.begin(), a.begin() + halfSize);
+    std::vector<float> aCenter(a.begin() + halfSize, a.end());
+
+    std::vector<float> bWhole(b.begin(), b.begin() + halfSize);
+    std::vector<float> bCenter(b.begin() + halfSize, b.end());
+
+    // Compute distances for each histogram
+    float wholeDist = histogramIntersection(aWhole, bWhole);
+    float centerDist = histogramIntersection(aCenter, bCenter);
+
+    // Incorprate weight
+    float centerWeight = 1.0f - wholeWeight;
+    float combinedDist = wholeWeight * wholeDist + centerWeight * centerDist;
+
+    return combinedDist;
+}
+
+/*
     Computes weighted distance combining color and texture histograms.
     
     Separates the combined feature vector into color and texture portions,

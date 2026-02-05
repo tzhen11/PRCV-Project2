@@ -37,6 +37,22 @@ float euclideanDistance(const std::vector<float> &a, const std::vector<float> &b
 float histogramIntersection(const std::vector<float> &a, const std::vector<float> &b);
 
 /*
+    Computes distance for multi-histogram features.
+    Splits the feature vector into two histograms, compares each,
+    then combines using weighted average.
+    
+    Parameters:
+        a: multi-histogram feature vector 1 (size = 2 * histSize * histSize)
+        b: multi-histogram feature vector 2 (size = 2 * histSize * histSize)
+        wholeWeight: weight for whole image histogram (default 0.5), centerWeight = 1.0 - weightWhole
+    
+    Returns:
+        combined distance
+        -1 on error
+*/
+float multiHistogramDistance(const std::vector<float> &a, const std::vector<float> &b, float wholeWeight = 0.5f);
+
+/*
     Computes weighted distance combining color and texture histograms.
     
     Separates the combined feature vector into color and texture portions,
