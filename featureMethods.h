@@ -35,4 +35,24 @@ int baseline7x7(const cv::Mat &src, std::vector<float> &features);
 */
 int colorHistogram(const cv::Mat &src, std::vector<float> &features, int histSize = 16);
 
+/*
+    Function to compute combined texture and color features from an image.
+    
+    Color: 2D RG chromaticity histogram (same as colorHistogram function)
+    Texture: Histogram of gradient magnitudes computed from Sobel X and Y filters
+    
+    The final feature vector concatenates both histograms:
+    [color histogram (histSize * histSize values)] + [texture histogram (histSize values)]
+    
+    Parameters:
+        src: input image (BGR format)
+        features: output feature vector (flattened, size = histSize * histSize + histSize)
+        histSize: number of bins per dimension (default 16)
+    
+    Returns:
+        0 on success
+        -1 on error
+*/
+int textureAndColor(const cv::Mat &src, std::vector<float> &features, int histSize = 16);
+
 #endif

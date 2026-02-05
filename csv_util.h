@@ -9,6 +9,7 @@
 
 #ifndef CVS_UTIL_H
 #define CVS_UTIL_H
+#include <vector>
 
 /*
   Given a filename, and image filename, and the image features, by

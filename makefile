@@ -2,11 +2,11 @@
 ifeq ($(OS),Windows_NT)
     # Windows settings
     CXX = g++
-    OPENCV_DIR = C:/opencv-mingw
+    OPENCV_DIR = C:/msys64/ucrt64
     ONNX_DIR = C:/onnxruntime
-    CXXFLAGS = -std=c++17 -I$(OPENCV_DIR)/include -I$(ONNX_DIR)/include
-    LDFLAGS = -L$(OPENCV_DIR)/x64/mingw/lib -L$(ONNX_DIR)/lib
-    LDFLAGS += -lopencv_core455 -lopencv_imgproc455 -lopencv_highgui455 -lopencv_imgcodecs455 -lopencv_objdetect455 -lopencv_dnn455
+    CXXFLAGS = -std=c++17 -I$(OPENCV_DIR)/include/opencv4 -I$(ONNX_DIR)/include
+    LDFLAGS = -L$(OPENCV_DIR)/lib -L$(ONNX_DIR)/lib
+    LDFLAGS += -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_objdetect -lopencv_dnn
     LDFLAGS += -lonnxruntime
     RM = del /Q
     EXE = .exe
@@ -22,7 +22,7 @@ else
 endif
 
 # Source files
-COMMON_SRC = csv_util.cpp featureMethods.cpp distanceFunctions.cpp
+COMMON_SRC = csv_util.cpp featureMethods.cpp distanceFunctions.cpp filters.cpp
 
 # Make methods
 buildFeatures: buildFeatures.cpp $(COMMON_SRC)

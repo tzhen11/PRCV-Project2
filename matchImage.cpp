@@ -37,6 +37,9 @@ int main(int argc, char* argv[]) {
     else if (featureMethod == "chistogram") {
         status = colorHistogram(targetImage, targetFeatures, 16);
     }
+    else if (featureMethod == "texture") {
+        status = textureAndColor(targetImage, targetFeatures);
+    }
     else {
         printf("Distance function not valid!\n");
         return -1;
@@ -65,6 +68,9 @@ int main(int argc, char* argv[]) {
         }
         else if (featureMethod == "chistogram") {
             dist = histogramIntersection(targetFeatures, data[i]);
+        }
+        else if (featureMethod == "texture") {
+            dist = textureColorDistance(targetFeatures, data[i],0.3f);
         }
 
         // Store results

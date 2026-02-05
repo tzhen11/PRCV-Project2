@@ -55,6 +55,13 @@ int retrieveImageFiles(const std::string &directory, std::vector<std::string> &i
 
 // Generate features in csv for image matching
 int main(int argc, char* argv[]) {
+    // Argument checks
+    if (argc != 4) {
+        printf("Usage: %s <image_directory> <feature_method> <output_csv>\n", argv[0]);
+        printf("Feature methods: baseline, chistogram\n");
+        return -1;
+    }
+    
     // Parse arguments
     std::string dbDirectory = argv[1];
     std::string featureMethod = argv[2];
@@ -84,6 +91,9 @@ int main(int argc, char* argv[]) {
         }
         else if (featureMethod == "chistogram") {
             status = colorHistogram(image, features);
+        }
+        else if (featureMethod == "texture") {
+            status = textureAndColor(image, features,16);
         }
         else {
             printf("Error, feature method not valid!\n");

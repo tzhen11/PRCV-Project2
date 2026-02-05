@@ -3,6 +3,7 @@
 */
 
 #include "featureMethods.h"
+#include "filters.h"
 
 /*
     Function to extract center 7x7 square from image as feature vector.
@@ -127,5 +128,100 @@ int colorHistogram(const cv::Mat &src, std::vector<float> &features, int histSiz
     }
     assert(features.size() == histSize * histSize);
     
+    return 0;
+}
+
+/*
+    Function to compute combined texture and color features from an image.
+    
+    Color: 2D RG chromaticity histogram (same as colorHistogram function)
+    Texture: Histogram of gradient magnitudes computed from Sobel X and Y filters
+    
+    The final feature vector concatenates both histograms:
+    [color histogram (histSize * histSize values)] + [texture histogram (histSize values)]
+    
+    Parameters:
+        src: input image (BGR format)
+        features: output feature vector (flattened, size = histSize * histSize + histSize)
+        histSize: number of bins per dimension (default 16)
+    
+    Returns:
+        0 on success
+        -1 on error
+*/
+int textureAndColor(const cv::Mat &src, std::vector<float> &features, int histSize) {
+    features.clear();
+
+    // Validate input
+    if (src.empty()) {
+        printf("Error, source is empty!\n");
+        return -1;
+    }
+
+    if (src.channels() != 3) {
+        printf("Error, image must be 3-channel!\n");
+        return -1;
+    }
+
+    // Color Histogram
+    std::vector<float> colorFeatures;
+    int status = colorHistogram(src, colorFeatures, histSize);
+    if (status != 0) {
+        printf("Error computing color histogram!\n");
+        return -1;
+    }
+
+    //Texture Histogram
+    
+    // Convert to grayscale for texture analysis
+    cv::Mat gray;
+    cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+
+    // Compute Sobel X and Y using our own functions
+    cv::Mat sobelX, sobelY;
+    cv::Mat srcCopy = src.clone();
+    sobelX3x3(srcCopy, sobelX);
+    sobelY3x3(srcCopy, sobelY);
+
+    // Compute gradient magnitude (outputs CV_8UC3)
+    cv::Mat mag;
+    magnitude(sobelX, sobelY, mag);
+
+    // Convert color magnitude to grayscale by averaging channels
+    cv::Mat grayMag;
+    cv::cvtColor(mag, grayMag, cv::COLOR_BGR2GRAY);
+
+    // Build texture histogram from magnitudes
+    // Magnitude values are in [0, 255], map to bins
+    cv::Mat textureHist = cv::Mat::zeros(1, histSize, CV_32FC1);
+
+    float maxLog = std::log(256.0f);
+
+    for (int i = 0; i < grayMag.rows; i++) {
+        const uchar* magPtr = grayMag.ptr<uchar>(i);
+        for (int j = 0; j < grayMag.cols; j++) {
+            // Log scale: spreads out low values
+            float logMag = std::log(1.0f + magPtr[j]);
+            
+            // Map to bin index
+            int binIndex = static_cast<int>((logMag / maxLog) * (histSize - 1) + 0.5f);
+            binIndex = std::min(std::max(binIndex, 0), histSize - 1);
+            textureHist.at<float>(0, binIndex)++;
+        }
+    }
+    // Normalize texture histogram
+    int totalPixels = grayMag.rows * grayMag.cols;
+    textureHist /= totalPixels;
+   
+    // Add color features
+    for (float val : colorFeatures) {
+        features.push_back(val);
+    }
+
+    // Add texture features
+    for (int i = 0; i < histSize; i++) {
+        features.push_back(textureHist.at<float>(0, i));
+    }
+
     return 0;
 }

@@ -13,3 +13,5 @@
 !featureMethods.cpp
 !distanceFunctions.h
 !distanceFunctions.cpp
+!filters.h
+!filters.cpp

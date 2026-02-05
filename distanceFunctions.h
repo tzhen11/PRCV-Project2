@@ -36,4 +36,23 @@ float euclideanDistance(const std::vector<float> &a, const std::vector<float> &b
 */
 float histogramIntersection(const std::vector<float> &a, const std::vector<float> &b);
 
+/*
+    Computes weighted distance combining color and texture histograms.
+    
+    Separates the combined feature vector into color and texture portions,
+    computes histogram intersection for each, converts to distance,
+    and returns a weighted combination.
+
+    Parameters:
+        a: combined feature vector [color (histSize*histSize) + texture (histSize)]
+        b: combined feature vector [color (histSize*histSize) + texture (histSize)]
+        colorWeight: weight for color distance (default 0.5, range 0-1)
+        histSize: number of bins per histogram dimension (default 16)
+
+    Returns:
+        weighted distance where 0 = identical, 1 = completely different
+        -1 on error
+*/
+float textureColorDistance(const std::vector<float> &a, const std::vector<float> &b, 
+                           float colorWeight = 0.5f, int histSize = 16);
 #endif

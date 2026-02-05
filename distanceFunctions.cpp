@@ -3,7 +3,7 @@
 */
 
 #include "distanceFunctions.h"
-#include <cstdio>
+#include <cstdio>   
 #include <cmath>
 
 /*
@@ -61,4 +61,51 @@ float histogramIntersection(const std::vector<float> &a, const std::vector<float
 
     // Since intersection is in [0,1] where 1 equals identical image, return 1 - intersection so 0 = identical image now
     return 1 - intersection;
+}
+
+/*
+    Computes weighted distance combining color and texture histograms.
+    
+    Separates the combined feature vector into color and texture portions,
+    computes histogram intersection for each, converts to distance,
+    and returns a weighted combination.
+
+    Parameters:
+        a: combined feature vector 1 [color (histSize*histSize) + texture (histSize)]
+        b: combined feature vector 2 [color (histSize*histSize) + texture (histSize)]
+        colorWeight: weight for color distance (default 0.5, range 0-1)
+        histSize: number of bins per histogram dimension (default 16)
+
+    Returns:
+        weighted distance where 0 = identical, 1 = completely different
+        -1 on error
+*/
+float textureColorDistance(const std::vector<float> &a, const std::vector<float> &b, 
+                           float colorWeight, int histSize) {
+    int colorSize = histSize * histSize;
+    
+    if (a.size() != b.size()) {
+        printf("Feature vector size mismatch!\n");
+        return -1;
+    }
+
+    // Color histogram intersection (first 256 values)
+    float colorIntersection = 0.0f;
+    for (int i = 0; i < colorSize; i++) {
+        colorIntersection += std::min(a[i], b[i]);
+    }
+
+    // Texture histogram intersection (last 16 values)
+    float textureIntersection = 0.0f;
+    for (size_t i = colorSize; i < a.size(); i++) {
+        textureIntersection += std::min(a[i], b[i]);
+    }
+
+    // Convert to distances (each intersection is 0-1 range)
+    float colorDist = 1.0f - colorIntersection;
+    float textureDist = 1.0f - textureIntersection;
+
+    // Weighted combination
+    float textureWeight = 1.0f - colorWeight;
+    return colorWeight * colorDist + textureWeight * textureDist;
 }
