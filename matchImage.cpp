@@ -21,6 +21,11 @@ int main(int argc, char* argv[]) {
     char* featureCSV = argv[3];
     int N = std::atoi(argv[4]);
 
+    // Read feature CSV
+    std::vector<char*> filenames;
+    std::vector<std::vector<float>> data;
+    read_image_data_csv(featureCSV, filenames, data, 0);
+
     // Load target image
     cv::Mat targetImage = cv::imread(targetImagePath);
     if (targetImage.empty()){
@@ -28,36 +33,62 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    // Compute target features
+    // Target features
     std::vector<float> targetFeatures;
     int status = -1;
-    if (featureMethod == "baseline") {
-        status = baseline7x7(targetImage, targetFeatures);
-    }
-    else if (featureMethod == "chistogram") {
-        status = colorHistogram(targetImage, targetFeatures, 16);
-    }
-    else if (featureMethod == "mhistogram") {
-        status = multiHistogram(targetImage, targetFeatures, 16);
-    }
-    else if (featureMethod == "texture") {
-        status = textureAndColor(targetImage, targetFeatures);
+
+    if (featureMethod == "resnet") {
+        // Lookup from CSV for ResNet
+        std::string targetName = targetImagePath;
+        
+        // Extract filename only (remove path)
+        size_t pos = targetName.find_last_of("/\\");
+        if (pos != std::string::npos) {
+            targetName = targetName.substr(pos + 1);
+        }
+        
+        // Find in CSV
+        for (size_t i = 0; i < filenames.size(); i++) {
+            if (std::string(filenames[i]) == targetName) {
+                targetFeatures = data[i];
+                status = 0;
+                break;
+            }
+        }
+        
+        if (status != 0) {
+            printf("Error: Target image not found in ResNet CSV!\n");
+            return -1;
+        }
     }
     else {
-        printf("Feature function not valid!\n");
-        return -1;
+        // Compute features for tasks 1-4
+        cv::Mat targetImage = cv::imread(targetImagePath);
+        if (targetImage.empty()) {
+            printf("Error loading target image!\n");
+            return -1;
+        }
+
+        if (featureMethod == "baseline") {
+            status = baseline7x7(targetImage, targetFeatures);
+        }
+        else if (featureMethod == "chistogram") {
+            status = colorHistogram(targetImage, targetFeatures, 16);
+        }
+        else if (featureMethod == "texture") {
+            status = textureAndColor(targetImage, targetFeatures);
+        }
+        else {
+            printf("Feature method not valid!\n");
+            return -1;
+        }
+
+        if (status != 0) {
+            printf("Error: Feature extraction failed!\n");
+            return -1;
+        }
     }
 
-    if (status != 0) {
-        printf("Error, feature extraction failed for target image!\n");
-        return -1;
-    }
-
-    // Read feature CSV
-    std::vector<char*> filenames;
-    std::vector<std::vector<float>> data;
-
-    read_image_data_csv(featureCSV, filenames, data, 0);
 
     // Compute distances
     std::vector<std::pair<float, std::string>> results;
@@ -78,7 +109,9 @@ int main(int argc, char* argv[]) {
         else if (featureMethod == "texture") {
             dist = textureColorDistance(targetFeatures, data[i],0.3f);
         }
-
+        else if (featureMethod == "resnet") {
+            dist = euclideanDistance(targetFeatures, data[i]);
+        }
         // Store results
         if (dist >= 0) {
             results.emplace_back(dist, filenames[i]);
@@ -98,7 +131,7 @@ int main(int argc, char* argv[]) {
         printf("%d: %s  (distance = %.5f)\n", i + 1,results[i].second.c_str(), results[i].first);
     }
 
-    // Cleanup allocated filenames
+    // Cleanup
     for (char* f : filenames) {
         delete[] f;
     }
