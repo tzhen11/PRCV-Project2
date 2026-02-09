@@ -71,4 +71,23 @@ float multiHistogramDistance(const std::vector<float> &a, const std::vector<floa
 */
 float textureColorDistance(const std::vector<float> &a, const std::vector<float> &b, 
                            float colorWeight = 0.5f, int histSize = 16);
+
+/*
+    Computes distance for face-detect features.
+    Assumes both feature vectors are from images that have face(s) (768 features).
+    
+    Parameters:
+        a: face-aware feature vector 1 (size = 3 * histSize * histSize)
+        b: face-aware feature vector 2 (size = 3 * histSize * histSize)
+        wholeWeight: weight for whole histogram (default 0.2)
+        faceWeight: weight for face histogram (default 0.6)
+        backgroundWeight: weight for background histogram (default 0.2)
+        histSize: each histogram size (default 16)
+    
+    Returns:
+        combined distance
+        -1 on error
+*/
+float faceDetectDistance(const std::vector<float> &a, const std::vector<float> &b,
+                        float wholeWeight = 0.2f, float faceWeight = 0.6f,float backgroundWeight = 0.2f, int histSize = 16);
 #endif

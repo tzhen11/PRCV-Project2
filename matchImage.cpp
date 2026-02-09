@@ -61,6 +61,13 @@ int main(int argc, char* argv[]) {
             return -1;
         }
     }
+    else if (featureMethod == "face") {
+        status = faceDetectHistogram(targetImage, targetFeatures, 16);
+        if (status == -2) {
+            printf("Error, no face detected in target image\n");
+            return -1;
+        }
+    }
     else {
         // Compute features for tasks 1-4
         cv::Mat targetImage = cv::imread(targetImagePath);
@@ -112,6 +119,10 @@ int main(int argc, char* argv[]) {
         else if (featureMethod == "resnet") {
             dist = euclideanDistance(targetFeatures, data[i]);
         }
+        else if (featureMethod == "face") {
+            dist = faceDetectDistance(targetFeatures, data[i], 0.2f, 0.6f, 0.2f);
+        }
+
         // Store results
         if (dist >= 0) {
             results.emplace_back(dist, filenames[i]);

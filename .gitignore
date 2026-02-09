@@ -15,3 +15,6 @@
 !distanceFunctions.cpp
 !filters.h
 !filters.cpp
+!faceDetect.h
+!faceDetect.cpp
+!haarcascade_frontalface_alt2.xml

@@ -22,7 +22,7 @@ else
 endif
 
 # Source files
-COMMON_SRC = csv_util.cpp featureMethods.cpp distanceFunctions.cpp filters.cpp
+COMMON_SRC = csv_util.cpp featureMethods.cpp distanceFunctions.cpp filters.cpp faceDetect.cpp
 
 # Make methods
 buildFeatures: buildFeatures.cpp $(COMMON_SRC)

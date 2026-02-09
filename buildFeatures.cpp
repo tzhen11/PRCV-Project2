@@ -75,6 +75,9 @@ int main(int argc, char* argv[]) {
     // Control for wiping csv and appending
     int reset = 1;
 
+    // Images with face counter
+    int faceImagesCounter = 0;
+
     // Extract feature vector from each image
     for (const auto &imgPath: imageFiles) {
         // Read image
@@ -98,6 +101,14 @@ int main(int argc, char* argv[]) {
         else if (featureMethod == "texture") {
             status = textureAndColor(image, features,16);
         }
+        else if (featureMethod == "face") {
+            status = faceDetectHistogram(image, features, 16);
+            if (status == -2) {
+                printf("Skipping! No face detected in %s!\n", imgPath.c_str());
+                continue;
+            }
+            faceImagesCounter++;
+        }
         else {
             printf("Error, feature method not valid!\n");
             return -1;
@@ -111,6 +122,10 @@ int main(int argc, char* argv[]) {
         append_image_data_csv(outputCSV, const_cast<char*>(imgPath.c_str()), features, reset);
 
         reset = 0;       
+    }
+
+    if (featureMethod == "face") {
+        printf("Found %d images with faces\n", faceImagesCounter);
     }
 
     return 0;

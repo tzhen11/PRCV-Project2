@@ -150,3 +150,49 @@ float textureColorDistance(const std::vector<float> &a, const std::vector<float>
     float textureWeight = 1.0f - colorWeight;
     return colorWeight * colorDist + textureWeight * textureDist;
 }
+
+/*
+    Computes distance for face-detect features.
+    Assumes both feature vectors are from images that have face(s) (768 features).
+    
+    Parameters:
+        a: face-aware feature vector 1 (size = 3 * histSize * histSize)
+        b: face-aware feature vector 2 (size = 3 * histSize * histSize)
+        wholeWeight: weight for whole histogram (default 0.2)
+        faceWeight: weight for face histogram (default 0.6)
+        backgroundWeight: weight for background histogram (default 0.2)
+        histSize: each histogram size (default 16)
+    
+    Returns:
+        combined distance
+        -1 on error
+*/
+float faceDetectDistance(const std::vector<float> &a, const std::vector<float> &b,
+                        float wholeWeight, float faceWeight, float backgroundWeight, int histSize) {
+    // Check vector sizes
+    if (a.size() != b.size()) {
+        printf("Feature vector sizes don't match!\n");
+        return -1;
+    }
+
+    int oneHistogramSize = histSize * histSize;
+
+    // Separate the three histograms
+    std::vector<float> aWhole(a.begin(), a.begin() + oneHistogramSize);
+    std::vector<float> aFace(a.begin() + oneHistogramSize, a.begin() + 2 * oneHistogramSize);
+    std::vector<float> aBackground(a.begin() + 2 * oneHistogramSize, a.end());
+
+    std::vector<float> bWhole(b.begin(), b.begin() + oneHistogramSize);
+    std::vector<float> bFace(b.begin() + oneHistogramSize, b.begin() + 2 * oneHistogramSize);
+    std::vector<float> bBackground(b.begin() + 2 * oneHistogramSize, b.end());
+
+    // Compute distance for each histogram
+    float wholeDist = histogramIntersection(aWhole, bWhole);
+    float faceDist = histogramIntersection(aFace, bFace);
+    float backgroundDist = histogramIntersection(aBackground, bBackground);
+
+    // Weighted distance of all three
+    float combinedDist = wholeWeight * wholeDist + faceWeight * faceDist + backgroundWeight * backgroundDist;
+
+    return combinedDist;
+}

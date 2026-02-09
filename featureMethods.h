@@ -71,4 +71,21 @@ int multiHistogram(const cv::Mat &src, std::vector<float> &features, int histSiz
 */
 int textureAndColor(const cv::Mat &src, std::vector<float> &features, int histSize = 16);
 
+
+/*
+    Function to compute face-aware multi-region histograms.
+    Requires face detection. Returns error if no face found.
+    Computes whole image, face region, and background histograms.
+    
+    Parameters:
+        src: input image (BGR format)
+        features: output feature vector (3 * histSize * histSize)
+        histSize: number of bins per dimension (default 16)
+    
+    Returns:
+        0 on success
+        -1 on error/no face found
+*/
+int faceDetectHistogram(const cv::Mat &src, std::vector<float> &features, int histSize = 16);
+
 #endif

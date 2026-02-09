@@ -4,6 +4,7 @@
 
 #include "featureMethods.h"
 #include "filters.h"
+#include "faceDetect.h"
 
 /*
     Function to extract center 7x7 square from image as feature vector.
@@ -353,5 +354,224 @@ int textureAndColor(const cv::Mat &src, std::vector<float> &features, int histSi
         features.push_back(textureHist.at<float>(0, i));
     }
 
+    return 0;
+}
+
+/*
+    Function to compute face-aware multi-region histograms.
+    Requires face detection. Returns error if no face found.
+    Computes whole image, face region, and background histograms.
+    
+    Parameters:
+        src: input image (BGR format)
+        features: output feature vector (3 * histSize * histSize)
+        histSize: number of bins per dimension (default 16)
+    
+    Returns:
+        0 on success
+        -1 on error/no face found
+*/
+int faceDetectHistogram(const cv::Mat &src, std::vector<float> &features, int histSize) {
+    features.clear();
+
+    // Validate input
+    if (src.empty()) {
+        printf("Error, source is empty!\n");
+        return -1;
+    }
+
+    if (src.channels() != 3) {
+        printf("Error, image must be 3-channel!\n");
+        return -1;
+    }
+
+    // Detect faces in the image
+    std::vector<cv::Rect> faces;
+
+    // Convert to grayscale
+    cv::Mat gray;
+    cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+
+    // Detect faces
+    detectFaces(gray, faces);
+
+    // Check if any faces detected, if not return -1
+    if (faces.size() == 0) {
+        //printf("No face detected!\n");
+        return -2;
+    }
+
+    // Initialize full image histogram with zeros
+    cv::Mat fullHist = cv::Mat::zeros(cv::Size(histSize, histSize), CV_32FC1);
+
+    // Compute full histogram, loop over all pixels
+    for (int i = 0; i < src.rows; i++) {
+        const cv::Vec3b *srcPtr = src.ptr<cv::Vec3b>(i);
+        
+        for (int j = 0; j < src.cols; j++) {
+            // Retrieve RGB vals
+            float B = srcPtr[j][0];
+            float G = srcPtr[j][1];
+            float R = srcPtr[j][2];
+
+            // Compute chromaticity vals (r , g)
+            float divisor = R + G + B;
+            divisor = divisor > 0.0 ? divisor : 1.0; // check for all zeros (avoid divide by 0)
+            float r = R / divisor;
+            float g = G / divisor;
+
+            // Compute histogram bin indicies (r and g are in [0, 1] range, map to [0, histogram size - 1])
+            int rIndex = static_cast<int>(r * (histSize - 1) + 0.5);
+            int gIndex = static_cast<int>(g * (histSize - 1) + 0.5);
+
+            // Clamp indicies to valid range
+            rIndex = std::min(std::max(rIndex, 0), histSize - 1);
+            gIndex = std::min(std::max(gIndex, 0), histSize - 1);
+
+            // Increment histogram bin
+            fullHist.at<float>(rIndex, gIndex)++;
+        }
+    }
+
+    // Normalize RBG
+    int totalPixels = src.rows * src.cols;
+    fullHist /= totalPixels;
+
+    // Compute face region histogram
+    cv::Mat faceHist = cv::Mat::zeros(cv::Size(histSize, histSize), CV_32FC1);
+
+    // Count pixels for normalization
+    int totalFacePixels = 0;
+
+    for (const auto &face : faces) {
+        // Get intersection of face region
+        cv::Rect safeFace = face & cv::Rect(0, 0, src.cols, src.rows);
+
+        for (int i = safeFace.y; i < safeFace.y + safeFace.height; i++) {
+            const cv::Vec3b *srcPtr = src.ptr<cv::Vec3b>(i);
+            
+            for (int j = safeFace.x; j < safeFace.x + safeFace.width; j++) {
+                // Retrieve RGB vals
+                float B = srcPtr[j][0];
+                float G = srcPtr[j][1];
+                float R = srcPtr[j][2];
+
+                // Compute chromaticity vals (r , g)
+                float divisor = R + G + B;
+                divisor = divisor > 0.0 ? divisor : 1.0; // check for all zeros (avoid divide by 0)
+                float r = R / divisor;
+                float g = G / divisor;
+
+                // Compute histogram bin indicies (r and g are in [0, 1] range, map to [0, histogram size - 1])
+                int rIndex = static_cast<int>(r * (histSize - 1) + 0.5);
+                int gIndex = static_cast<int>(g * (histSize - 1) + 0.5);
+
+                // Clamp indicies to valid range
+                rIndex = std::min(std::max(rIndex, 0), histSize - 1);
+                gIndex = std::min(std::max(gIndex, 0), histSize - 1);
+
+                // Increment histogram bin
+                faceHist.at<float>(rIndex, gIndex)++;
+                
+                // Increment face pixel counter
+                totalFacePixels++;
+            }
+        }
+    }
+
+    // Normalize RGB for face histogram
+    if (totalFacePixels > 0) {
+        faceHist /= totalFacePixels;
+    }
+    else {
+        printf("Error, no face pixels found!\n");
+        return -1;
+    }
+    
+
+    // Compute background histogram
+    cv::Mat backgroundHist = cv::Mat::zeros(cv::Size(histSize, histSize), CV_32FC1);
+
+    // Background pixel counter for normalization
+    int backgroundPixels = 0;
+
+    // Create mask for face
+    cv::Mat faceMask = cv::Mat::zeros(src.size(), CV_8UC1);
+    for (const auto &face : faces) {
+        // Clamp face rect to image bounds
+        cv::Rect safeFace = face & cv::Rect(0, 0, src.cols, src.rows);
+
+        // Mark pixels in face rectange as 255, leave background as 0
+        faceMask(safeFace).setTo(255);
+    }
+
+    for (int i = 0; i < src.rows; i++) {
+        const cv::Vec3b *srcPtr = src.ptr<cv::Vec3b>(i);
+        const uchar *maskPtr = faceMask.ptr<uchar>(i);
+
+        for (int j = 0; j < src.cols; j++) {
+            // Only compute if pixel is a background pixel aka equal 0
+            if (maskPtr[j] == 0) {
+                // Retrieve RGB vals
+                float B = srcPtr[j][0];
+                float G = srcPtr[j][1];
+                float R = srcPtr[j][2];
+
+                // Compute chromaticity vals (r , g)
+                float divisor = R + G + B;
+                divisor = divisor > 0.0 ? divisor : 1.0; // check for all zeros (avoid divide by 0)
+                float r = R / divisor;
+                float g = G / divisor;
+
+                // Compute histogram bin indicies (r and g are in [0, 1] range, map to [0, histogram size - 1])
+                int rIndex = static_cast<int>(r * (histSize - 1) + 0.5);
+                int gIndex = static_cast<int>(g * (histSize - 1) + 0.5);
+
+                // Clamp indicies to valid range
+                rIndex = std::min(std::max(rIndex, 0), histSize - 1);
+                gIndex = std::min(std::max(gIndex, 0), histSize - 1);
+
+                // Increment histogram bin
+                backgroundHist.at<float>(rIndex, gIndex)++;
+
+                // Increment background pixel counter
+                backgroundPixels++;
+            }
+        }
+    }
+
+    // Normalize background histogram
+    if (backgroundPixels > 0) {
+        backgroundHist /= backgroundPixels;
+    }
+    else {
+        printf("Error, no background pixels found!\n");
+        return -1;
+    }
+    
+
+    // Flatten all three hisograms for returned feature vector
+    for (int i = 0; i < fullHist.rows; i++) {
+        const float *fullHistPtr = fullHist.ptr<float>(i);
+        for (int j = 0; j < fullHist.cols; j++) {
+            features.push_back(fullHistPtr[j]);
+        }
+    }
+
+    for (int i = 0; i < faceHist.rows; i++) {
+        const float *faceHistPtr = faceHist.ptr<float>(i);
+        for (int j = 0; j < faceHist.cols; j++) {
+            features.push_back(faceHistPtr[j]);
+        }
+    }
+
+    for (int i = 0; i < backgroundHist.rows; i++) {
+        const float *backgroundHistPtr = backgroundHist.ptr<float>(i);
+        for (int j = 0; j < backgroundHist.cols; j++) {
+            features.push_back(backgroundHistPtr[j]);
+        }
+    }
+
+    assert(features.size() == 3 * histSize * histSize);
     return 0;
 }
