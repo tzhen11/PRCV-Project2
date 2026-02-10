@@ -196,3 +196,41 @@ float faceDetectDistance(const std::vector<float> &a, const std::vector<float> &
 
     return combinedDist;
 }
+
+/*
+    Computes cosine distance between two feature vectors.
+    
+    Cosine similarity = (a · b) / (||a|| × ||b||)
+    Cosine distance = 1 - similarity
+    
+    Parameters:
+        a: feature vector 1
+        b: feature vector 2
+    
+    Returns:
+        cosine distance (0 = identical, 2 = opposite)
+*/
+float cosineDistance(const std::vector<float> &a, const std::vector<float> &b) {
+    if (a.size() != b.size()) {
+        printf("Vector sizes do not match!\n");
+        return -1;
+    }
+
+    float dotProduct = 0.0f;
+    float normA = 0.0f;
+    float normB = 0.0f;
+
+    for (size_t i = 0; i < a.size(); i++) {
+        dotProduct += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+    }
+
+    normA = std::sqrt(normA);
+    normB = std::sqrt(normB);
+
+    if (normA == 0 || normB == 0) return 1.0f;
+
+    float similarity = dotProduct / (normA * normB);
+    return 1.0f - similarity;
+}

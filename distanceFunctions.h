@@ -90,4 +90,19 @@ float textureColorDistance(const std::vector<float> &a, const std::vector<float>
 */
 float faceDetectDistance(const std::vector<float> &a, const std::vector<float> &b,
                         float wholeWeight = 0.2f, float faceWeight = 0.6f,float backgroundWeight = 0.2f, int histSize = 16);
+
+/*
+    Computes cosine distance between two feature vectors.
+    
+    Cosine similarity = (a · b) / (||a|| × ||b||)
+    Cosine distance = 1 - similarity
+    
+    Parameters:
+        a: feature vector 1
+        b: feature vector 2
+    
+    Returns:
+        cosine distance (0 = identical, 2 = opposite)
+*/
+float cosineDistance(const std::vector<float> &a, const std::vector<float> &b);
 #endif
